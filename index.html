@@ -48,11 +48,14 @@
       </div>
       <div>
         <h1 class="text-sm font-bold tracking-wide text-white leading-none">MECHVISION <span class="text-sky-400">AI</span></h1>
-        <span id="plan-badge" class="text-[10px] text-amber-400 font-mono">STANDALONE APP</span>
+        <span id="plan-badge" class="text-[10px] text-amber-400 font-mono">PLAN GRATUIT (3 scans)</span>
       </div>
     </div>
 
     <div class="flex items-center gap-1.5">
+      <button onclick="toggleModal('pro-modal')" class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-black text-slate-950 shadow-md">
+        ⚡ PRO
+      </button>
       <button onclick="toggleModal('vault-modal')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200">
         📁 Pièces
       </button>
@@ -90,9 +93,9 @@
         </select>
       </div>
 
-      <!-- NEW: Text Prompt Input for AI Generation -->
+      <!-- Text Prompt Input for AI Generation -->
       <div class="flex gap-2">
-        <input type="text" id="text-prompt" placeholder="Décrivez la pièce (ex: pignon 24 dents, alésage 10mm)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500" />
+        <input type="text" id="text-prompt" placeholder="Décrivez la pièce (ex: pignon 28 dents)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500" />
         <button onclick="handleTextPromptGeneration()" class="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/30">
           ✨ Générer
         </button>
@@ -136,8 +139,8 @@
   <!-- API Key Modal -->
   <div id="api-modal" class="fixed inset-0 z-50 bg-black/80 hidden items-center justify-center p-4">
     <div class="glass-panel rounded-2xl p-5 w-full max-w-sm">
-      <h2 class="text-base font-bold text-white mb-1">Clé API Gemini Vision</h2>
-      <p class="text-xs text-slate-400 mb-3">Connectez votre clé Google AI Studio pour activer la vision et la génération textuelle.</p>
+      <h2 class="text-base font-bold text-white mb-1">Clé API Gemini</h2>
+      <p class="text-xs text-slate-400 mb-3">Connectez votre clé Google AI Studio pour activer la vision et la génération par texte.</p>
       <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white mb-3 focus:outline-none focus:border-sky-500" />
       <div class="flex justify-end gap-2">
         <button onclick="toggleModal('api-modal')" class="px-3 py-2 rounded-lg bg-slate-800 text-xs text-slate-300">Fermer</button>
@@ -146,8 +149,55 @@
     </div>
   </div>
 
+  <!-- PRO Upgrade Modal -->
+  <div id="pro-modal" class="fixed inset-0 z-50 bg-black/85 hidden items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl p-5 w-full max-w-sm border-amber-500/40">
+      <div class="inline-block px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold mb-2">LICENCE INDUSTRIELLE</div>
+      <h2 class="text-lg font-black text-white mb-1">MechVision AI PRO</h2>
+      <p class="text-xs text-slate-300 mb-3">Débloquez la puissance maximale pour votre atelier :</p>
+      <ul class="text-xs text-slate-300 space-y-1.5 mb-4">
+        <li>✅ Scans & Générations IA illimités</li>
+        <li>✅ Export STL haute précision sans filigrane</li>
+        <li>✅ Plans techniques 2D cotés (SVG)</li>
+        <li>✅ Mode 100% hors-ligne chantier</li>
+      </ul>
+      <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700 mb-4 flex justify-between items-center">
+        <div>
+          <div class="text-xs text-slate-400">Abonnement Atelier</div>
+          <div class="text-lg font-black text-white">39 € <span class="text-xs font-normal text-slate-400">/ mois</span></div>
+        </div>
+        <button onclick="activateProDemo()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs shadow-lg">
+          Activer PRO
+        </button>
+      </div>
+      <button onclick="toggleModal('pro-modal')" class="w-full py-2 rounded-lg bg-slate-800 text-xs text-slate-400">Fermer</button>
+    </div>
+  </div>
+
   <script>
     let currentPart = 'gear';
+    let isPro = localStorage.getItem('MECHVISION_PRO') === 'true';
+    let freeScansLeft = parseInt(localStorage.getItem('MECHVISION_SCANS') || '3', 10);
+
+    function updatePlanUI() {
+      const badge = document.getElementById('plan-badge');
+      if (isPro) {
+        badge.innerText = '⚡ LICENCE PRO ILLIMITÉE';
+        badge.className = 'text-[10px] text-emerald-400 font-mono font-bold';
+      } else {
+        badge.innerText = `PLAN GRATUIT (${freeScansLeft} scans)`;
+        badge.className = 'text-[10px] text-amber-400 font-mono';
+      }
+    }
+
+    function activateProDemo() {
+      isPro = true;
+      localStorage.setItem('MECHVISION_PRO', 'true');
+      updatePlanUI();
+      toggleModal('pro-modal');
+      document.getElementById('status-text').innerText = "🎉 Licence PRO activée avec succès !";
+    }
+
     let params = {
       gear: { teeth: 20, outerRadius: 30, boreRadius: 8, thickness: 14 },
       flange: { outerRadius: 40, boreRadius: 15, boltCount: 6, boltRadius: 3, thickness: 10 },
@@ -333,13 +383,14 @@
     function saveApiKey() {
       localStorage.setItem('GEMINI_API_KEY', document.getElementById('gemini-key-input').value.trim());
       toggleModal('api-modal');
+      document.getElementById('status-text').innerText = "Clé API enregistrée ✓";
     }
 
     function saveCurrentPartToVault() {
       const vault = JSON.parse(localStorage.getItem('MECHVISION_VAULT') || '[]');
       vault.push({ type: currentPart, params: JSON.parse(JSON.stringify(params[currentPart])), date: new Date().toLocaleDateString() });
       localStorage.setItem('MECHVISION_VAULT', JSON.stringify(vault));
-      alert("Pièce sauvegardée !");
+      alert("Pièce sauvegardée dans le coffre !");
     }
 
     function loadVault() {
@@ -373,29 +424,29 @@
     }
 
     // ==========================================
-    // AI TEXT PROMPT GENERATION (Prompt-to-CAD)
+    // AI GENERATION (TEXT PROMPT & PHOTO SCAN)
     // ==========================================
     async function handleTextPromptGeneration() {
       const promptText = document.getElementById('text-prompt').value.trim();
       if (!promptText) {
-        alert("Veuillez entrer une description textuelle de la pièce.");
+        alert("Veuillez entrer une description textuelle.");
         return;
       }
       const apiKey = localStorage.getItem('GEMINI_API_KEY');
       if (!apiKey) { toggleModal('api-modal'); return; }
 
-      document.getElementById('status-text').innerText = "⏳ Génération 3D par IA via le texte...";
+      document.getElementById('status-text').innerText = "⏳ Génération IA par texte...";
 
-      const prompt = `Tu es un ingénieur mécanicien expert. À partir de cette description textuelle : "${promptText}", retourne UNIQUEMENT un objet JSON valide (sans markdown) correspondant à l'un de ces 3 modèles de pièces :
-1. {"type": "gear", "teeth": <8-60>, "outerRadius": <15-70>, "boreRadius": <2-35>, "thickness": <4-40>}
-2. {"type": "flange", "outerRadius": <20-80>, "boreRadius": <5-45>, "boltCount": <3-12>, "boltRadius": 3, "thickness": <4-30>}
-3. {"type": "bushing", "outerRadius": <10-60>, "boreRadius": <3-40>, "height": <10-90>, "chamfer": 2}`;
+      const systemPrompt = `Tu es un ingénieur mécanicien expert. À partir de cette description : "${promptText}", traduis-la en paramètres géométriques et retourne UNIQUEMENT un objet JSON valide (sans aucun formatage markdown autour comme \`\`\`json) respectant l'un de ces formats :
+1. Pour un pignon / engrenage : {"type": "gear", "teeth": <nombre entre 8 et 60>, "outerRadius": <nombre entre 15 et 70>, "boreRadius": <nombre entre 2 et 35>, "thickness": <nombre entre 4 et 40>}
+2. Pour une bride : {"type": "flange", "outerRadius": <nombre entre 20 et 80>, "boreRadius": <nombre entre 5 et 45>, "boltCount": <nombre entre 3 et 12>, "boltRadius": 3, "thickness": <nombre entre 4 et 30>}
+3. Pour une bague : {"type": "bushing", "outerRadius": <nombre entre 10 et 60>, "boreRadius": <nombre entre 3 et 40>, "height": <nombre entre 10 et 90>, "chamfer": 2}`;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({contents: [{parts: [{text: prompt}]}]})
+          body: JSON.stringify({contents: [{parts: [{text: systemPrompt}]}]})
         });
         const data = await res.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
@@ -408,7 +459,7 @@
           Object.assign(params[currentPart], parsed);
           renderSliders();
           buildPartMesh();
-          document.getElementById('status-text').innerText = `✅ Pièce générée par texte : ${currentPart.toUpperCase()}`;
+          document.getElementById('status-text').innerText = `✅ Généré : ${currentPart.toUpperCase()}`;
         } else {
           throw new Error("Format invalide");
         }
@@ -421,6 +472,12 @@
     async function handleImageUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+
+      if (!isPro && freeScansLeft <= 0) {
+        toggleModal('pro-modal');
+        return;
+      }
+
       const apiKey = localStorage.getItem('GEMINI_API_KEY');
       if (!apiKey) { toggleModal('api-modal'); return; }
 
@@ -429,20 +486,28 @@
       const reader = new FileReader();
       reader.onload = async function() {
         const base64 = reader.result.split(',')[1];
-        const prompt = `Analyse cette pièce mécanique et retourne UNIQUEMENT un JSON valide :
+        const prompt = `Analyse cette pièce mécanique et retourne UNIQUEMENT un JSON valide (sans markdown) :
 1. {"type": "gear", "teeth": <8-60>, "outerRadius": <15-70>, "boreRadius": <2-35>, "thickness": <4-40>}
 2. {"type": "flange", "outerRadius": <20-80>, "boreRadius": <5-45>, "boltCount": <3-12>, "boltRadius": 3, "thickness": <4-30>}
 3. {"type": "bushing", "outerRadius": <10-60>, "boreRadius": <3-40>, "height": <10-90>, "chamfer": 2}`;
 
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({contents: [{parts: [{text: prompt}, {inline_data: {mime_type: file.type, data: base64}}]}]})
           });
           const data = await res.json();
-          const parsed = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim());
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          const cleanJson = rawText.replace(/```json|```/g, '').trim();
+          const parsed = JSON.parse(cleanJson);
+
           if (parsed && parsed.type) {
+            if (!isPro) {
+              freeScansLeft = Math.max(0, freeScansLeft - 1);
+              localStorage.setItem('MECHVISION_SCANS', freeScansLeft.toString());
+              updatePlanUI();
+            }
             currentPart = parsed.type;
             document.getElementById('part-type').value = currentPart;
             Object.assign(params[currentPart], parsed);
@@ -465,6 +530,7 @@
       link.href = URL.createObjectURL(blob);
       link.download = `mechvision_${currentPart}_${Date.now()}.stl`;
       link.click();
+      document.getElementById('status-text').innerText = "📦 Fichier STL exporté !";
     }
 
     function exportBlueprint() {
@@ -476,6 +542,7 @@
       link.href = URL.createObjectURL(blob);
       link.download = `plan_${currentPart}.svg`;
       link.click();
+      document.getElementById('status-text').innerText = "📐 Plan SVG exporté !";
     }
 
     function animate() {
@@ -490,6 +557,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
+    updatePlanUI();
     renderSliders();
     buildPartMesh();
     animate();
