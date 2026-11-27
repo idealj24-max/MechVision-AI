@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>MechVision AI — Générateur CAD 3D Industriel</title>
   <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="./manifest.json" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Three.js & Contrôles & Exportateur STL -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
@@ -27,12 +27,11 @@
       z-index: 1;
     }
     .glass-panel {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.88);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(56, 189, 248, 0.25);
     }
-    /* Custom range slider */
     input[type=range] {
       -webkit-appearance: none;
       background: transparent;
@@ -68,34 +67,37 @@
       </div>
       <div>
         <h1 class="text-sm font-bold tracking-wide text-white leading-none">MECHVISION <span class="text-sky-400">AI</span></h1>
-        <span class="text-[10px] text-slate-400 font-mono">CAD GENERATOR v1.0</span>
+        <span id="plan-badge" class="text-[10px] text-amber-400 font-mono">PLAN GRATUIT (3 scans)</span>
       </div>
     </div>
 
-    <div class="flex items-center gap-2">
-      <button onclick="toggleModal('api-modal')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-sky-400 flex items-center gap-1">
-        <span>🔑 API</span>
+    <div class="flex items-center gap-1.5">
+      <button onclick="toggleModal('pro-modal')" class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-black text-slate-950 shadow-md">
+        ⚡ PRO
       </button>
-      <button onclick="exportSTL()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 flex items-center gap-1">
-        <span>⬇ STL</span>
+      <button onclick="toggleModal('api-modal')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-sky-400">
+        🔑
+      </button>
+      <button onclick="exportSTL()" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-lg shadow-emerald-600/30">
+        ⬇ STL
       </button>
     </div>
   </header>
 
-  <!-- Floating Status / Diagnostics Badge -->
+  <!-- Floating Status Badge -->
   <div id="status-badge" class="fixed top-16 left-3 right-3 z-20 pointer-events-none flex justify-center">
     <div id="status-text" class="px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-[11px] font-mono text-sky-300 shadow-md">
-      Prêt • Modèle actif : Engrenage Industriel
+      Prêt • Hors-ligne actif
     </div>
   </div>
 
   <!-- Bottom Control Dock -->
-  <div class="fixed bottom-0 left-0 right-0 z-20 glass-panel border-b-0 border-x-0 rounded-t-2xl p-4 pb-5 max-h-[52vh] overflow-y-auto">
+  <div class="fixed bottom-0 left-0 right-0 z-20 glass-panel border-b-0 border-x-0 rounded-t-2xl p-4 pb-5 max-h-[54vh] overflow-y-auto">
     
-    <!-- Action Bar: Camera Scan & Piece Type -->
+    <!-- Action Bar -->
     <div class="grid grid-cols-2 gap-2 mb-3">
-      <label class="cursor-pointer flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-sky-600/30 transition active:scale-95">
-        <span>📸 Scanner Pièce (IA)</span>
+      <label class="cursor-pointer flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-sky-600/30 transition active:scale-95">
+        <span>📸 Scanner IA</span>
         <input type="file" id="image-input" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(event)" />
       </label>
 
@@ -107,55 +109,93 @@
     </div>
 
     <!-- Parametric Controls -->
-    <div id="controls-panel" class="space-y-3 text-xs">
-      <!-- Dynamic sliders injected by JS -->
-    </div>
+    <div id="controls-panel" class="space-y-3 text-xs"></div>
 
-    <!-- Specs Readout -->
-    <div class="mt-3 pt-2.5 border-t border-slate-800 flex justify-between items-center text-[11px] font-mono text-slate-400">
-      <span id="dim-summary">Ø Ext: 60mm | Ép: 15mm</span>
-      <span id="mat-est" class="text-sky-400">Acier C45 / PLA+</span>
+    <!-- Footer Specs & Blueprint Export -->
+    <div class="mt-3 pt-2.5 border-t border-slate-800 flex justify-between items-center text-[11px] font-mono">
+      <span id="dim-summary" class="text-slate-400">Ø Ext: 60mm | Z=20</span>
+      <button onclick="exportBlueprint()" class="text-sky-400 underline font-semibold">📐 Plan 2D (SVG)</button>
     </div>
   </div>
 
   <!-- API Key Modal -->
   <div id="api-modal" class="fixed inset-0 z-50 bg-black/80 hidden items-center justify-center p-4">
     <div class="glass-panel rounded-2xl p-5 w-full max-w-sm">
-      <h2 class="text-base font-bold text-white mb-1">Configuration Gemini Vision API</h2>
-      <p class="text-xs text-slate-400 mb-3">Entrez votre clé API Google Gemini pour analyser automatiquement les photos de pièces cassées.</p>
+      <h2 class="text-base font-bold text-white mb-1">Clé API Gemini Vision</h2>
+      <p class="text-xs text-slate-400 mb-3">Connectez votre clé Google AI Studio pour la reconnaissance de pièces par caméra.</p>
       <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white mb-3 focus:outline-none focus:border-sky-500" />
       <div class="flex justify-end gap-2">
         <button onclick="toggleModal('api-modal')" class="px-3 py-2 rounded-lg bg-slate-800 text-xs text-slate-300">Fermer</button>
-        <button onclick="saveApiKey()" class="px-4 py-2 rounded-lg bg-sky-600 text-xs font-bold text-white">Sauvegarder</button>
+        <button onclick="saveApiKey()" class="px-4 py-2 rounded-lg bg-sky-600 text-xs font-bold text-white">Enregistrer</button>
       </div>
+    </div>
+  </div>
+
+  <!-- PRO Upgrade / Monetization Modal -->
+  <div id="pro-modal" class="fixed inset-0 z-50 bg-black/85 hidden items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl p-5 w-full max-w-sm border-amber-500/40">
+      <div class="inline-block px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold mb-2">LICENCE INDUSTRIELLE</div>
+      <h2 class="text-lg font-black text-white mb-1">MechVision AI PRO</h2>
+      <p class="text-xs text-slate-300 mb-3">Débloquez la puissance maximale pour votre atelier ou bureau d'études :</p>
+      <ul class="text-xs text-slate-300 space-y-1.5 mb-4">
+        <li>✅ Scans IA illimités par caméra</li>
+        <li>✅ Export STL haute précision sans filigrane</li>
+        <li>✅ Génération de plans techniques 2D cotés</li>
+        <li>✅ Utilisation 100% hors-ligne sur chantier</li>
+      </ul>
+      <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700 mb-4 flex justify-between items-center">
+        <div>
+          <div class="text-xs text-slate-400">Abonnement Atelier</div>
+          <div class="text-lg font-black text-white">39 € <span class="text-xs font-normal text-slate-400">/ mois</span></div>
+        </div>
+        <button onclick="activateProDemo()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs shadow-lg">
+          Activer PRO
+        </button>
+      </div>
+      <button onclick="toggleModal('pro-modal')" class="w-full py-2 rounded-lg bg-slate-800 text-xs text-slate-400">Continuer en version gratuite</button>
     </div>
   </div>
 
   <script>
     // ==========================================
-    // 1. STATE & PARAMETERS
+    // 0. PWA SERVICE WORKER REGISTRATION
+    // ==========================================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    // ==========================================
+    // 1. STATE, MONETIZATION & PARAMETERS
     // ==========================================
     let currentPart = 'gear';
-    let params = {
-      gear: {
-        teeth: 20,
-        outerRadius: 30,
-        boreRadius: 8,
-        thickness: 14
-      },
-      flange: {
-        outerRadius: 40,
-        boreRadius: 15,
-        boltCount: 6,
-        boltRadius: 3,
-        thickness: 10
-      },
-      bushing: {
-        outerRadius: 25,
-        boreRadius: 12,
-        height: 35,
-        chamfer: 2
+    let isPro = localStorage.getItem('MECHVISION_PRO') === 'true';
+    let freeScansLeft = parseInt(localStorage.getItem('MECHVISION_SCANS') || '3', 10);
+
+    function updatePlanUI() {
+      const badge = document.getElementById('plan-badge');
+      if (isPro) {
+        badge.innerText = '⚡ LICENCE PRO ILLIMITÉE';
+        badge.className = 'text-[10px] text-emerald-400 font-mono font-bold';
+      } else {
+        badge.innerText = `PLAN GRATUIT (${freeScansLeft} scans)`;
+        badge.className = 'text-[10px] text-amber-400 font-mono';
       }
+    }
+
+    function activateProDemo() {
+      isPro = true;
+      localStorage.setItem('MECHVISION_PRO', 'true');
+      updatePlanUI();
+      toggleModal('pro-modal');
+      setStatus('🎉 Licence PRO activée avec succès !');
+    }
+
+    let params = {
+      gear: { teeth: 20, outerRadius: 30, boreRadius: 8, thickness: 14 },
+      flange: { outerRadius: 40, boreRadius: 15, boltCount: 6, boltRadius: 3, thickness: 10 },
+      bushing: { outerRadius: 25, boreRadius: 12, height: 35, chamfer: 2 }
     };
 
     // ==========================================
@@ -171,35 +211,28 @@
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
 
-    // Industrial Grid
     const gridHelper = new THREE.GridHelper(160, 32, 0x0ea5e9, 0x1e293b);
     gridHelper.position.y = -15;
     scene.add(gridHelper);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.9);
     dirLight1.position.set(50, 80, 50);
     scene.add(dirLight1);
-
     const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.5);
     dirLight2.position.set(-50, -30, -50);
     scene.add(dirLight2);
 
-    // Metallic Material
     const metalMaterial = new THREE.MeshStandardMaterial({
       color: 0x94a3b8,
-      metalness: 0.75,
-      roughness: 0.25,
+      metalness: 0.78,
+      roughness: 0.22,
     });
 
     let activeMesh = null;
@@ -241,7 +274,6 @@
         }
         shape.closePath();
 
-        // Center bore hole
         if (p.boreRadius > 0 && p.boreRadius < rootR - 2) {
           const hole = new THREE.Path();
           hole.absarc(0, 0, p.boreRadius, 0, Math.PI * 2, true);
@@ -265,14 +297,12 @@
         const shape = new THREE.Shape();
         shape.absarc(0, 0, p.outerRadius, 0, Math.PI * 2, false);
 
-        // Center bore
         if (p.boreRadius > 0 && p.boreRadius < p.outerRadius - 4) {
           const centerHole = new THREE.Path();
           centerHole.absarc(0, 0, p.boreRadius, 0, Math.PI * 2, true);
           shape.holes.push(centerHole);
         }
 
-        // Bolt holes circle
         const pcd = (p.outerRadius + p.boreRadius) / 2;
         const count = Math.round(p.boltCount);
         for (let i = 0; i < count; i++) {
@@ -378,7 +408,7 @@
     }
 
     // ==========================================
-    // 5. GEMINI VISION INTEGRATION
+    // 5. GEMINI VISION INTEGRATION + FREEMIUM GATE
     // ==========================================
     function setStatus(msg, isAlert = false) {
       const el = document.getElementById('status-text');
@@ -393,7 +423,9 @@
       if (m.classList.contains('hidden')) {
         m.classList.remove('hidden');
         m.classList.add('flex');
-        document.getElementById('gemini-key-input').value = localStorage.getItem('GEMINI_API_KEY') || '';
+        if (id === 'api-modal') {
+          document.getElementById('gemini-key-input').value = localStorage.getItem('GEMINI_API_KEY') || '';
+        }
       } else {
         m.classList.add('hidden');
         m.classList.remove('flex');
@@ -410,6 +442,12 @@
     async function handleImageUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+
+      if (!isPro && freeScansLeft <= 0) {
+        setStatus("⚠️ Limite gratuite atteinte — Passez PRO", true);
+        toggleModal('pro-modal');
+        return;
+      }
 
       const apiKey = localStorage.getItem('GEMINI_API_KEY');
       if (!apiKey) {
@@ -450,6 +488,11 @@
           const parsed = JSON.parse(cleanJson);
 
           if (parsed && parsed.type && params[parsed.type]) {
+            if (!isPro) {
+              freeScansLeft = Math.max(0, freeScansLeft - 1);
+              localStorage.setItem('MECHVISION_SCANS', freeScansLeft.toString());
+              updatePlanUI();
+            }
             currentPart = parsed.type;
             document.getElementById('part-type').value = currentPart;
             Object.assign(params[currentPart], parsed);
@@ -468,7 +511,7 @@
     }
 
     // ==========================================
-    // 6. EXPORT STL (3D PRINTING / CAD READY)
+    // 6. EXPORTS: STL 3D & PLAN TECHNIQUE 2D SVG
     // ==========================================
     function exportSTL() {
       if (!activeMesh) return;
@@ -482,8 +525,28 @@
       setStatus(`📦 Fichier STL exporté avec succès !`);
     }
 
+    function exportBlueprint() {
+      const p = params[currentPart];
+      const outerR = p.outerRadius || 30;
+      const boreR = p.boreRadius || 10;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="-100 -100 200 200" style="background:#090d16">
+        <circle cx="0" cy="0" r="${outerR}" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+        <circle cx="0" cy="0" r="${boreR}" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="-90" y1="0" x2="90" y2="0" stroke="#475569" stroke-dasharray="4 2" stroke-width="0.6"/>
+        <line x1="0" y1="-90" x2="0" y2="90" stroke="#475569" stroke-dasharray="4 2" stroke-width="0.6"/>
+        <text x="-90" y="-82" fill="#38bdf8" font-family="monospace" font-size="8">MECHVISION AI - PLAN TECHNIQUE (${currentPart.toUpperCase()})</text>
+        <text x="-90" y="88" fill="#94a3b8" font-family="monospace" font-size="7">Ø EXT: ${outerR * 2}mm | Ø INT: ${boreR * 2}mm</text>
+      </svg>`;
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `plan_${currentPart}_${Date.now()}.svg`;
+      link.click();
+      setStatus(`📐 Plan technique 2D SVG exporté !`);
+    }
+
     // ==========================================
-    // 7. ANIMATION LOOP & RESIZE
+    // 7. ANIMATION LOOP
     // ==========================================
     function animate() {
       requestAnimationFrame(animate);
@@ -497,7 +560,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Init
+    updatePlanUI();
     renderSliders();
     buildPartMesh();
     animate();
